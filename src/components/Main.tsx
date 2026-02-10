@@ -3,6 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { Container } from "react-bootstrap";
 import Attendance from "./Attendance";
 import Leave from "./Leave";
+import LeaveYesterday from "./LeaveYesterday";
 import Application from "./Application";
 import ToggleButton from "react-bootstrap/ToggleButton";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
@@ -21,6 +22,11 @@ const components = [
     name: "随時申請",
     appName: Application,
     id: "3",
+  },
+  {
+    name: "退勤報告(前営業日)",
+    appName: LeaveYesterday,
+    id: "4",
   },
 ];
 function Main() {
