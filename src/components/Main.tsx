@@ -1,60 +1,58 @@
 import { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Container } from "react-bootstrap";
-import Attendance from "./Attendance";
-import Leave from "./Leave";
-import LeaveYesterday from "./LeaveYesterday";
-import Application from "./Application";
-import ToggleButton from "react-bootstrap/ToggleButton";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
-const components = [
-  {
-    name: "出勤報告",
-    appName: Attendance,
-    id: "1",
-  },
-  {
-    name: "退勤報告",
-    appName: Leave,
-    id: "2",
-  },
-  {
-    name: "随時申請",
-    appName: Application,
-    id: "3",
-  },
-  {
-    name: "退勤報告(前営業日)",
-    appName: LeaveYesterday,
-    id: "4",
-  },
+import ToggleButton from "react-bootstrap/ToggleButton";
+import Attendance from "./Attendance";
+import LeaveForm from "./LeaveForm";
+import Application from "./Application";
+
+type TabDef = {
+  id: string;
+  name: string;
+};
+
+const tabs: TabDef[] = [
+  { id: "1", name: "出勤報告" },
+  { id: "2", name: "退勤報告" },
+  { id: "3", name: "随時申請" },
+  { id: "4", name: "退勤報告(前営業日)" },
 ];
+
+function renderTab(id: string) {
+  switch (id) {
+    case "1": return <Attendance />;
+    case "2": return <LeaveForm />;
+    case "3": return <Application />;
+    case "4": return <LeaveForm isYesterday />;
+    default:  return null;
+  }
+}
+
 function Main() {
-  const [radioValue, setRadioValue] = useState(components[0].id);
+  const [activeId, setActiveId] = useState(tabs[0].id);
+
   return (
     <div className="Main">
       <Container>
         <ButtonGroup className="mt-3 mb-3">
-          {components.map((v, index) => (
+          {tabs.map((tab) => (
             <ToggleButton
-              key={index}
-              id={v.id}
+              key={tab.id}
+              id={tab.id}
               type="radio"
-              value={v.id}
-              checked={radioValue === v.id}
-              onChange={(e) => setRadioValue(e.currentTarget.value)}
+              value={tab.id}
+              checked={activeId === tab.id}
+              onChange={(e) => setActiveId(e.currentTarget.value)}
             >
-              {v.name}
+              {tab.name}
             </ToggleButton>
           ))}
         </ButtonGroup>
-        {components.map((v) => {
-          if (v.id === radioValue) {
-            const Component = v.appName;
-            return <Component key={v.id} />;
-          }
-          return null;
-        })}
+        {/* key にアクティブなタブ ID を渡すことで、タブ切り替え時に必ず再マウントされる */}
+        <div key={activeId}>
+          {renderTab(activeId)}
+        </div>
       </Container>
     </div>
   );

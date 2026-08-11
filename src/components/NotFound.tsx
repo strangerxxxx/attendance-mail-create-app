@@ -1,10 +1,8 @@
-import React from "react";
-
 function NotFound() {
   return (
     <div className="NotFound">
-      <h1>404 - Page Not Found</h1>
-      <p>Sorry, the page you are looking for does not exist.</p>
+      <h1>404 - ページが見つかりません</h1>
+      <p>お探しのページは存在しません。</p>
     </div>
   );
 }

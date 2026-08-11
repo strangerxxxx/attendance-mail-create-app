@@ -1,46 +1,60 @@
-# Getting Started with Create React App
+# 勤怠管理メール作成アプリ
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+自社用出退勤メール作成アプリ
 
-## Available Scripts
+## 技術スタック
 
-In the project directory, you can run:
+- [React](https://react.dev/) 19
+- [TypeScript](https://www.typescriptlang.org/) 5
+- [Vite](https://vitejs.dev/) 6
+- [React Bootstrap](https://react-bootstrap.netlify.app/) 2
+- [React Router](https://reactrouter.com/) 7
+- [date-fns](https://date-fns.org/) 3
 
-### `npm start`
+## セットアップ
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+```bash
+npm install
+```
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## 開発サーバー起動
 
-### `npm test`
+```bash
+npm start
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+ブラウザで [http://localhost:5173](http://localhost:5173) を開きます。
 
-### `npm run build`
+## ビルド
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```bash
+npm run build
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+`dist/` フォルダーに本番用ファイルが生成されます。
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## ビルド結果のプレビュー
 
-### `npm run eject`
+```bash
+npm run preview
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## プロジェクト構成
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+```
+src/
+├── components/
+│   ├── Application.tsx      # 随時申請フォーム
+│   ├── Applications.json    # 申請区分マスタデータ
+│   ├── Attendance.tsx       # 出勤報告フォーム
+│   ├── LeaveForm.tsx        # 退勤報告フォーム（前営業日モード兼用）
+│   ├── Main.tsx             # タブ切り替えコンテナ
+│   ├── MyNavbar.tsx         # ナビゲーションバー
+│   ├── NotFound.tsx         # 404ページ
+│   ├── Settings.tsx         # 設定画面
+│   └── useSettings.tsx      # 設定値管理カスタムフック
+├── utils/
+│   ├── dateUtils.ts         # 日付フォーマット・営業日計算
+│   └── mailUtils.ts         # mailto URL 組み立て
+└── types.ts                 # 共通型定義
+```

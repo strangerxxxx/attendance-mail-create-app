@@ -1,30 +1,39 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Form, Button } from "react-bootstrap";
-import { addBusinessDays } from "date-fns";
-import applications from "./Applications.json";
 import useSettings from "./useSettings";
+import { ValueItem } from "../types";
+import { today, nextBusinessDay } from "../utils/dateUtils";
+import { buildMailtoUrl, extractMailBody, formatDateForMail } from "../utils/mailUtils";
+import applications from "./Applications.json";
 
-function Attendance() {
+type FormValues = {
+  date: string;
+  enddate: string;
+  time: string;
+  endtime: string;
+  breaktime: string;
+  class: string;
+  cause: string;
+  reason: string;
+  isDisableddate: boolean;
+  isDisabledenddate: boolean;
+  isDisabledtime: boolean;
+  isDisabledendtime: boolean;
+  isDisabledbreaktime: boolean;
+  isDisabledclass: boolean;
+  isDisabledcause: boolean;
+  isDisabledreason: boolean;
+};
+
+function Application() {
   const [settingValue] = useSettings();
 
-  const convertDate = (date: Date) =>
-    date
-      .toLocaleDateString("ja-JP", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      })
-      .replaceAll("/", "-");
-
-  const today = convertDate(new Date());
-  const tomorrow = convertDate(addBusinessDays(new Date(), 1));
-
-  const [email, setEmail] = useState("");
-  const [value, setValue] = useState({
-    date: today,
-    enddate: tomorrow,
-    time: "",
-    endtime: "",
+  const [email, setEmail] = useState(settingValue.email);
+  const [formValues, setFormValues] = useState<FormValues>({
+    date: today(),
+    enddate: nextBusinessDay(),
+    time: settingValue.starttime,
+    endtime: settingValue.endtime,
     breaktime: "00:00",
     class: applications[0].name,
     cause: applications[0].cause,
@@ -39,111 +48,67 @@ function Attendance() {
     isDisabledreason: false,
   });
 
+  // 設定変更時にメールアドレスと時刻を同期する
   useEffect(() => {
     setEmail(settingValue.email);
-    setValue((prevValue) => ({
-      ...prevValue,
+    setFormValues((prev) => ({
+      ...prev,
       time: settingValue.starttime,
       endtime: settingValue.endtime,
     }));
   }, [settingValue]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
-    setValue((prevValue) => ({ ...prevValue, [name]: value }));
+    setFormValues((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
-    setValue((prevValue) => ({ ...prevValue, [name]: !checked }));
+    // スイッチ ON = フィールド有効 (isDisabled = false)
+    setFormValues((prev) => ({ ...prev, [name]: !checked }));
   };
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedName = e.target.value;
-    const selectedApplication = applications.find(
-      (app) => app.name === selectedName
-    );
-    setValue((prevValue) => ({
-      ...prevValue,
+    const selected = applications.find((app) => app.name === selectedName);
+    setFormValues((prev) => ({
+      ...prev,
       class: selectedName,
-      cause: selectedApplication?.cause || "",
-      reason: selectedApplication?.reason || "",
+      cause: selected?.cause ?? "",
+      reason: selected?.reason ?? "",
     }));
   };
 
-  type ValueItem = {
-    name: string;
-    type: string;
-    field: keyof typeof value;
-    disabledField: keyof typeof value;
-    options?: string[];
-  };
   const classes = applications.map((item) => item.name);
 
-  const values: ValueItem[] = [
-    {
-      name: "対象日",
-      type: "date",
-      field: "date",
-      disabledField: "isDisableddate",
-    },
-    {
-      name: "終了日",
-      type: "date",
-      field: "enddate",
-      disabledField: "isDisabledenddate",
-    },
-    {
-      name: "出勤時刻",
-      type: "time",
-      field: "time",
-      disabledField: "isDisabledtime",
-    },
-    {
-      name: "退勤時刻",
-      type: "time",
-      field: "endtime",
-      disabledField: "isDisabledendtime",
-    },
-    {
-      name: "法定分を除く休憩時間",
-      type: "time",
-      field: "breaktime",
-      disabledField: "isDisabledbreaktime",
-    },
-    {
-      name: "勤務区分",
-      type: "select",
-      field: "class",
-      disabledField: "isDisabledclass",
-      options: classes,
-    },
-    {
-      name: "事由",
-      type: "text",
-      field: "cause",
-      disabledField: "isDisabledcause",
-    },
-    {
-      name: "内容",
-      type: "text",
-      field: "reason",
-      disabledField: "isDisabledreason",
-    },
+  const fieldDefs: ValueItem<FormValues>[] = [
+    { name: "対象日", type: "date", field: "date", disabledField: "isDisableddate" },
+    { name: "終了日", type: "date", field: "enddate", disabledField: "isDisabledenddate" },
+    { name: "出勤時刻", type: "time", field: "time", disabledField: "isDisabledtime" },
+    { name: "退勤時刻", type: "time", field: "endtime", disabledField: "isDisabledendtime" },
+    { name: "法定分を除く休憩時間", type: "time", field: "breaktime", disabledField: "isDisabledbreaktime" },
+    { name: "勤務区分", type: "select", field: "class", disabledField: "isDisabledclass", options: classes },
+    { name: "事由", type: "text", field: "cause", disabledField: "isDisabledcause" },
+    { name: "内容", type: "text", field: "reason", disabledField: "isDisabledreason" },
   ];
 
-  const mailbody = () => {
-    const bodyContent = values
-      .filter((item) => !value[item.disabledField])
-      .map((item) => `${item.name}:${value[item.field]}`)
-      .join("%0D%0A")
-      .replaceAll("-", "/");
+  const mailtoUrl = useMemo(() => {
+    const bodyLines = fieldDefs
+      .filter((item) => !formValues[item.disabledField])
+      .map((item) =>
+        `${item.name}:${formatDateForMail(String(formValues[item.field]))}`,
+      );
+    return buildMailtoUrl(email, "【勤怠管理】随時申請", bodyLines);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [email, formValues]);
 
-    return `mailto:${email}?subject=【勤怠管理】随時申請&body=${bodyContent}`;
-  };
+  const previewText = extractMailBody(mailtoUrl);
 
   return (
-    <div className="Attendance">
+    <div>
       <Form>
         <Form.Group className="mb-3" controlId="formEmail">
           <Form.Label>メールアドレス</Form.Label>
@@ -155,28 +120,30 @@ function Attendance() {
           />
         </Form.Group>
 
-        {values.map((v, index) => (
+        {fieldDefs.map((v) => {
+          const isDisabled = formValues[v.disabledField] as boolean;
+          return (
           <Form.Group
             className="mb-3 d-flex"
-            controlId={`form${index}`}
-            key={index}
+            controlId={`form-${v.field}`}
+            key={v.field}
           >
             <Form.Check
               type="switch"
               name={v.disabledField as string}
-              checked={!value[v.disabledField] as boolean}
+              checked={!isDisabled}
               onChange={handleCheckboxChange}
             />
             <Form.Label className="col-sm-2">{v.name}</Form.Label>
             {v.type === "select" ? (
               <Form.Select
                 name={v.field as string}
-                disabled={value[v.disabledField] as boolean}
-                value={value[v.field] as string}
+                disabled={isDisabled}
+                value={formValues[v.field] as string}
                 onChange={handleSelectChange}
               >
-                {v.options?.map((option, idx) => (
-                  <option key={idx} value={option}>
+                {v.options?.map((option) => (
+                  <option key={option} value={option}>
                     {option}
                   </option>
                 ))}
@@ -185,31 +152,28 @@ function Attendance() {
               <Form.Control
                 type={v.type}
                 name={v.field as string}
-                disabled={value[v.disabledField] as boolean}
-                value={value[v.field] as string}
+                disabled={isDisabled}
+                value={formValues[v.field] as string}
                 onChange={handleChange}
               />
             )}
           </Form.Group>
-        ))}
+          );
+        })}
       </Form>
 
-      <Button className="mb-3" href={mailbody()} variant="primary">
+      <Button className="mb-3" href={mailtoUrl} variant="primary">
         メール作成
       </Button>
 
       <Form>
-        <Form.Label className="col-sm-2">メール本文プレビュー</Form.Label>
-        <Form.Group className="mb-3" controlId="formBody">
+        <Form.Label>メール本文プレビュー</Form.Label>
+        <Form.Group className="mb-3" controlId="formBodyPreview">
           <Form.Control
             as="textarea"
-            type="text"
-            key="body"
-            rows={mailbody().split("%0D%0A").length}
-            value={mailbody()
-              .replaceAll("%0D%0A", "\r\n")
-              .slice(mailbody().indexOf("body=") + 5)}
-            disabled
+            rows={previewText.split("\r\n").length}
+            value={previewText}
+            readOnly
           />
         </Form.Group>
       </Form>
@@ -217,4 +181,4 @@ function Attendance() {
   );
 }
 
-export default Attendance;
+export default Application;
