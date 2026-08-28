@@ -1,5 +1,3 @@
-const LINE_BREAK = "%0D%0A";
-
 /**
  * mailto: URL を組み立てる
  * @param email 宛先メールアドレス
@@ -12,18 +10,25 @@ export const buildMailtoUrl = (
   subject: string,
   bodyLines: string[],
 ): string => {
-  const body = bodyLines.join(LINE_BREAK);
-  return `mailto:${email}?subject=${subject}&body=${body}`;
+  const body = encodeURIComponent(bodyLines.join("\r\n"));
+  return `mailto:${email.trim()}?subject=${encodeURIComponent(subject)}&body=${body}`;
 };
 
 /**
  * mailto: URL からプレビュー用の本文テキストを取り出す
  */
 export const extractMailBody = (mailtoUrl: string): string => {
-  const marker = "body=";
-  const idx = mailtoUrl.indexOf(marker);
-  if (idx === -1) return "";
-  return mailtoUrl.slice(idx + marker.length).replaceAll(LINE_BREAK, "\r\n");
+  const query = mailtoUrl.split("?")[1];
+  if (!query) return "";
+
+  const bodyParam = query.split("&").find((part) => part.startsWith("body="));
+  if (!bodyParam) return "";
+
+  try {
+    return decodeURIComponent(bodyParam.slice("body=".length));
+  } catch {
+    return "";
+  }
 };
 
 /**

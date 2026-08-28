@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, type ChangeEvent } from "react";
 import { Form, Button } from "react-bootstrap";
 import useSettings from "./useSettings";
 import { ValueItem } from "../types";
 import { today, nextBusinessDay } from "../utils/dateUtils";
 import { buildMailtoUrl, extractMailBody, formatDateForMail } from "../utils/mailUtils";
+import { EmailField, IncludeField, MailPreview } from "./MailFormFields";
 import applications from "./Applications.json";
 
 type FormValues = {
@@ -24,6 +25,19 @@ type FormValues = {
   isDisabledcause: boolean;
   isDisabledreason: boolean;
 };
+
+const classes = applications.map((item) => item.name);
+
+const fieldDefs: ValueItem<FormValues>[] = [
+  { name: "対象日", type: "date", field: "date", disabledField: "isDisableddate" },
+  { name: "終了日", type: "date", field: "enddate", disabledField: "isDisabledenddate" },
+  { name: "出勤時刻", type: "time", field: "time", disabledField: "isDisabledtime" },
+  { name: "退勤時刻", type: "time", field: "endtime", disabledField: "isDisabledendtime" },
+  { name: "法定分を除く休憩時間", type: "time", field: "breaktime", disabledField: "isDisabledbreaktime" },
+  { name: "勤務区分", type: "select", field: "class", disabledField: "isDisabledclass", options: classes },
+  { name: "事由", type: "text", field: "cause", disabledField: "isDisabledcause" },
+  { name: "内容", type: "text", field: "reason", disabledField: "isDisabledreason" },
+];
 
 function Application() {
   const [settingValue] = useSettings();
@@ -48,7 +62,6 @@ function Application() {
     isDisabledreason: false,
   });
 
-  // 設定変更時にメールアドレスと時刻を同期する
   useEffect(() => {
     setEmail(settingValue.email);
     setFormValues((prev) => ({
@@ -59,19 +72,18 @@ function Application() {
   }, [settingValue]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormValues((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
-    // スイッチ ON = フィールド有効 (isDisabled = false)
     setFormValues((prev) => ({ ...prev, [name]: !checked }));
   };
 
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleSelectChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const selectedName = e.target.value;
     const selected = applications.find((app) => app.name === selectedName);
     setFormValues((prev) => ({
@@ -82,19 +94,6 @@ function Application() {
     }));
   };
 
-  const classes = applications.map((item) => item.name);
-
-  const fieldDefs: ValueItem<FormValues>[] = [
-    { name: "対象日", type: "date", field: "date", disabledField: "isDisableddate" },
-    { name: "終了日", type: "date", field: "enddate", disabledField: "isDisabledenddate" },
-    { name: "出勤時刻", type: "time", field: "time", disabledField: "isDisabledtime" },
-    { name: "退勤時刻", type: "time", field: "endtime", disabledField: "isDisabledendtime" },
-    { name: "法定分を除く休憩時間", type: "time", field: "breaktime", disabledField: "isDisabledbreaktime" },
-    { name: "勤務区分", type: "select", field: "class", disabledField: "isDisabledclass", options: classes },
-    { name: "事由", type: "text", field: "cause", disabledField: "isDisabledcause" },
-    { name: "内容", type: "text", field: "reason", disabledField: "isDisabledreason" },
-  ];
-
   const mailtoUrl = useMemo(() => {
     const bodyLines = fieldDefs
       .filter((item) => !formValues[item.disabledField])
@@ -102,44 +101,27 @@ function Application() {
         `${item.name}:${formatDateForMail(String(formValues[item.field]))}`,
       );
     return buildMailtoUrl(email, "【勤怠管理】随時申請", bodyLines);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email, formValues]);
-
-  const previewText = extractMailBody(mailtoUrl);
 
   return (
     <div>
       <Form>
-        <Form.Group className="mb-3" controlId="formEmail">
-          <Form.Label>メールアドレス</Form.Label>
-          <Form.Control
-            type="email"
-            placeholder="Enter email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </Form.Group>
+        <EmailField value={email} onChange={setEmail} />
 
-        {fieldDefs.map((v) => {
-          const isDisabled = formValues[v.disabledField] as boolean;
-          return (
-          <Form.Group
-            className="mb-3 d-flex"
-            controlId={`form-${v.field}`}
+        {fieldDefs.map((v) => (
+          <IncludeField
             key={v.field}
+            id={String(v.field)}
+            label={v.name}
+            switchName={String(v.disabledField)}
+            included={!formValues[v.disabledField]}
+            onToggle={handleCheckboxChange}
           >
-            <Form.Check
-              type="switch"
-              name={v.disabledField as string}
-              checked={!isDisabled}
-              onChange={handleCheckboxChange}
-            />
-            <Form.Label className="col-sm-2">{v.name}</Form.Label>
             {v.type === "select" ? (
               <Form.Select
-                name={v.field as string}
-                disabled={isDisabled}
-                value={formValues[v.field] as string}
+                name={String(v.field)}
+                disabled={formValues[v.disabledField]}
+                value={String(formValues[v.field])}
                 onChange={handleSelectChange}
               >
                 {v.options?.map((option) => (
@@ -151,32 +133,21 @@ function Application() {
             ) : (
               <Form.Control
                 type={v.type}
-                name={v.field as string}
-                disabled={isDisabled}
-                value={formValues[v.field] as string}
+                name={String(v.field)}
+                disabled={formValues[v.disabledField]}
+                value={String(formValues[v.field])}
                 onChange={handleChange}
               />
             )}
-          </Form.Group>
-          );
-        })}
+          </IncludeField>
+        ))}
       </Form>
 
       <Button className="mb-3" href={mailtoUrl} variant="primary">
         メール作成
       </Button>
 
-      <Form>
-        <Form.Label>メール本文プレビュー</Form.Label>
-        <Form.Group className="mb-3" controlId="formBodyPreview">
-          <Form.Control
-            as="textarea"
-            rows={previewText.split("\r\n").length}
-            value={previewText}
-            readOnly
-          />
-        </Form.Group>
-      </Form>
+      <MailPreview text={extractMailBody(mailtoUrl)} />
     </div>
   );
 }

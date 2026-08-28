@@ -17,7 +17,7 @@ const settingFieldDefs: SettingFieldDef[] = [
 ];
 
 function Settings() {
-  const [settingValue, setSettingValues] = useSettings();
+  const [settingValue, setSettingValues, saveSettings] = useSettings();
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [toastKey, setToastKey] = useState(0);
 
@@ -30,10 +30,9 @@ function Settings() {
       });
     };
 
-  // useSettings の useEffect が settingValue 変更時に自動保存するため、
-  // ここでは保存完了トーストの表示のみ行う
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    saveSettings(settingValue);
     setShowSavedToast(true);
     setToastKey((key) => key + 1);
   };

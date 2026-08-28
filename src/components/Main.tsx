@@ -1,5 +1,4 @@
 import { useState } from "react";
-import "bootstrap/dist/css/bootstrap.min.css";
 import { Container } from "react-bootstrap";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import ToggleButton from "react-bootstrap/ToggleButton";
@@ -39,8 +38,10 @@ function Main() {
           {tabs.map((tab) => (
             <ToggleButton
               key={tab.id}
-              id={tab.id}
+              id={`tab-${tab.id}`}
               type="radio"
+              name="report-type"
+              variant="outline-primary"
               value={tab.id}
               checked={activeId === tab.id}
               onChange={(e) => setActiveId(e.currentTarget.value)}

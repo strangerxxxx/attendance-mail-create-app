@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { SettingValuesType } from "../types";
+
+const STORAGE_KEY = "kintaiSettingValue";
 
 const defaultSettings: SettingValuesType = {
   email: "example@example.com",
@@ -8,27 +10,29 @@ const defaultSettings: SettingValuesType = {
   projectcode: "",
 };
 
-const useSettings = () => {
-  const storedSettings = localStorage.getItem("kintaiSettingValue");
-  let initialSettings: SettingValuesType;
-
+const loadSettings = (): SettingValuesType => {
   try {
-    initialSettings = storedSettings
-      ? JSON.parse(storedSettings)
-      : defaultSettings;
+    const storedSettings = localStorage.getItem(STORAGE_KEY);
+    if (!storedSettings) return defaultSettings;
+
+    const parsed = JSON.parse(storedSettings) as Partial<SettingValuesType>;
+    return { ...defaultSettings, ...parsed };
   } catch (error) {
     console.error("設定値の読み込みに失敗しました:", error);
-    initialSettings = defaultSettings;
+    return defaultSettings;
   }
+};
 
+const useSettings = () => {
   const [settingValue, setSettingValues] =
-    useState<SettingValuesType>(initialSettings);
+    useState<SettingValuesType>(loadSettings);
 
-  useEffect(() => {
-    localStorage.setItem("kintaiSettingValue", JSON.stringify(settingValue));
-  }, [settingValue]);
+  const saveSettings = (values: SettingValuesType = settingValue) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
+    setSettingValues(values);
+  };
 
-  return [settingValue, setSettingValues] as const;
+  return [settingValue, setSettingValues, saveSettings] as const;
 };
 
 export default useSettings;

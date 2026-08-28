@@ -6,6 +6,14 @@ export type SettingValuesType = {
   projectcode: string;
 };
 
+type BooleanKeys<T> = {
+  [K in keyof T]-?: T[K] extends boolean ? K : never;
+}[keyof T];
+
+type StringKeys<T> = {
+  [K in keyof T]-?: T[K] extends string ? K : never;
+}[keyof T];
+
 /** フォームフィールド定義の共通型 */
 export type ValueItem<T extends Record<string, unknown>> = {
   /** ラベル名 */
@@ -13,9 +21,9 @@ export type ValueItem<T extends Record<string, unknown>> = {
   /** input の type 属性 */
   type: string;
   /** 値を読み書きするフィールドキー */
-  field: keyof T;
+  field: StringKeys<T>;
   /** 有効/無効フラグのフィールドキー */
-  disabledField: keyof T;
+  disabledField: BooleanKeys<T>;
   /** select の選択肢（type === "select" のとき使用） */
   options?: string[];
 };
@@ -27,7 +35,7 @@ export type WorkValueItem<T extends Record<string, unknown>> = {
   /** input の type 属性 */
   type: string;
   /** 値を読み書きするフィールドキー */
-  field: keyof T;
+  field: StringKeys<T>;
 };
 
 /** 作業区分グループの型 */

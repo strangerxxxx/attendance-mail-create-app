@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, type ChangeEvent } from "react";
 import { Form, Button } from "react-bootstrap";
 import useSettings from "./useSettings";
 import { ValueItem } from "../types";
 import { today } from "../utils/dateUtils";
 import { buildMailtoUrl, extractMailBody, formatDateForMail } from "../utils/mailUtils";
+import { EmailField, IncludeField, MailPreview } from "./MailFormFields";
 
 type FormValues = {
   date: string;
@@ -11,6 +12,11 @@ type FormValues = {
   isDisableddate: boolean;
   isDisabledtime: boolean;
 };
+
+const fieldDefs: ValueItem<FormValues>[] = [
+  { name: "出勤日", type: "date", field: "date", disabledField: "isDisableddate" },
+  { name: "出勤時刻", type: "time", field: "time", disabledField: "isDisabledtime" },
+];
 
 function Attendance() {
   const [settingValue] = useSettings();
@@ -23,27 +29,20 @@ function Attendance() {
     isDisabledtime: false,
   });
 
-  // 設定変更時にメールアドレスと出勤時刻を同期する
   useEffect(() => {
     setEmail(settingValue.email);
     setFormValues((prev) => ({ ...prev, time: settingValue.starttime }));
   }, [settingValue]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormValues((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
-    // スイッチ ON = フィールド有効 (isDisabled = false)
     setFormValues((prev) => ({ ...prev, [name]: !checked }));
   };
-
-  const fieldDefs: ValueItem<FormValues>[] = [
-    { name: "出勤日", type: "date", field: "date", disabledField: "isDisableddate" },
-    { name: "出勤時刻", type: "time", field: "time", disabledField: "isDisabledtime" },
-  ];
 
   const mailtoUrl = useMemo(() => {
     const bodyLines = fieldDefs
@@ -52,66 +51,38 @@ function Attendance() {
         `${item.name}:${formatDateForMail(String(formValues[item.field]))}`,
       );
     return buildMailtoUrl(email, "【勤怠管理】出勤自己報告", bodyLines);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email, formValues]);
-
-  const previewText = extractMailBody(mailtoUrl);
 
   return (
     <div>
       <Form>
-        <Form.Group className="mb-3" controlId="formEmail">
-          <Form.Label>メールアドレス</Form.Label>
-          <Form.Control
-            type="email"
-            placeholder="Enter email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </Form.Group>
+        <EmailField value={email} onChange={setEmail} />
 
-        {fieldDefs.map((v) => {
-          const isDisabled = formValues[v.disabledField] as boolean;
-          return (
-          <Form.Group
-            className="mb-3 d-flex"
-            controlId={`form-${v.field}`}
+        {fieldDefs.map((v) => (
+          <IncludeField
             key={v.field}
+            id={String(v.field)}
+            label={v.name}
+            switchName={String(v.disabledField)}
+            included={!formValues[v.disabledField]}
+            onToggle={handleCheckboxChange}
           >
-            <Form.Check
-              type="switch"
-              name={v.disabledField as string}
-              checked={!isDisabled}
-              onChange={handleCheckboxChange}
-            />
-            <Form.Label className="col-sm-2">{v.name}</Form.Label>
             <Form.Control
               type={v.type}
-              name={v.field as string}
-              disabled={isDisabled}
-              value={formValues[v.field] as string}
+              name={String(v.field)}
+              disabled={formValues[v.disabledField]}
+              value={String(formValues[v.field])}
               onChange={handleChange}
             />
-          </Form.Group>
-          );
-        })}
+          </IncludeField>
+        ))}
       </Form>
 
       <Button className="mb-3" href={mailtoUrl} variant="primary">
         メール作成
       </Button>
 
-      <Form>
-        <Form.Label>メール本文プレビュー</Form.Label>
-        <Form.Group className="mb-3" controlId="formBodyPreview">
-          <Form.Control
-            as="textarea"
-            rows={previewText.split("\r\n").length}
-            value={previewText}
-            readOnly
-          />
-        </Form.Group>
-      </Form>
+      <MailPreview text={extractMailBody(mailtoUrl)} />
     </div>
   );
 }
