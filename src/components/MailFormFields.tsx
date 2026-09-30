@@ -55,14 +55,20 @@ export function IncludeField({
 
 type MailPreviewProps = {
   text: string;
+  label?: string;
+  controlId?: string;
 };
 
-export function MailPreview({ text }: MailPreviewProps) {
+export function MailPreview({
+  text,
+  label = "メール本文プレビュー",
+  controlId = "formBodyPreview",
+}: MailPreviewProps) {
   const rows = Math.max(4, text.split(/\r\n|\n/).length);
   return (
     <Form>
-      <Form.Label htmlFor="formBodyPreview">メール本文プレビュー</Form.Label>
-      <Form.Group className="mb-3" controlId="formBodyPreview">
+      <Form.Label htmlFor={controlId}>{label}</Form.Label>
+      <Form.Group className="mb-3" controlId={controlId}>
         <Form.Control as="textarea" rows={rows} value={text} readOnly />
       </Form.Group>
     </Form>

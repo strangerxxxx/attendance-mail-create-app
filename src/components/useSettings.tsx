@@ -8,6 +8,8 @@ const defaultSettings: SettingValuesType = {
   starttime: "09:00",
   endtime: "17:30",
   projectcode: "",
+  workcause: "プロジェクト業務",
+  workreason: "プロジェクト業務のため",
 };
 
 const loadSettings = (): SettingValuesType => {

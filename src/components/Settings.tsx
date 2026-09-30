@@ -16,6 +16,11 @@ const settingFieldDefs: SettingFieldDef[] = [
   { name: "プロジェクトコード", type: "text", field: "projectcode" },
 ];
 
+const workApplicationFieldDefs: SettingFieldDef[] = [
+  { name: "事由", type: "text", field: "workcause" },
+  { name: "内容", type: "text", field: "workreason" },
+];
+
 function Settings() {
   const [settingValue, setSettingValues, saveSettings] = useSettings();
   const [showSavedToast, setShowSavedToast] = useState(false);
@@ -65,6 +70,22 @@ function Settings() {
       <Container>
         <Form onSubmit={handleSubmit}>
           {settingFieldDefs.map((v) => (
+            <Form.Group
+              className="mb-3 mt-3 d-flex"
+              controlId={`form-${v.field}`}
+              key={v.field}
+            >
+              <Form.Label className="col-sm-2">{v.name}</Form.Label>
+              <Form.Control
+                type={v.type}
+                name={v.field}
+                value={settingValue[v.field]}
+                onChange={handleChange(v.field)}
+              />
+            </Form.Group>
+          ))}
+          <h2 className="h5 mt-4">勤務申請</h2>
+          {workApplicationFieldDefs.map((v) => (
             <Form.Group
               className="mb-3 mt-3 d-flex"
               controlId={`form-${v.field}`}

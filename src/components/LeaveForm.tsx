@@ -14,6 +14,10 @@ import {
   formatDateForMail,
 } from "../utils/mailUtils";
 import { EmailField, IncludeField, MailPreview } from "./MailFormFields";
+import {
+  buildWorkApplicationBodyLines,
+  WORK_APPLICATION_SUBJECT,
+} from "../utils/workApplication";
 
 type FormValues = {
   date: string;
@@ -73,8 +77,8 @@ function LeaveForm({ isYesterday = false }: Props) {
     nextstarttime: settingValue.starttime,
     nextendtime: settingValue.endtime,
     nextdate: baseNextDate,
-    cause: "プロジェクト業務",
-    reason: "プロジェクト業務のため",
+    cause: settingValue.workcause,
+    reason: settingValue.workreason,
     isDisableddate: false,
     isDisabledtime: false,
     isDisablednextdate: false,
@@ -102,6 +106,8 @@ function LeaveForm({ isYesterday = false }: Props) {
       time: settingValue.endtime,
       nextstarttime: settingValue.starttime,
       nextendtime: settingValue.endtime,
+      cause: settingValue.workcause,
+      reason: settingValue.workreason,
     }));
   }, [settingValue]);
 
@@ -164,6 +170,25 @@ function LeaveForm({ isYesterday = false }: Props) {
     ];
     return buildMailtoUrl(email, "【勤怠管理】退勤報告", bodyLines);
   }, [email, formValues, formGroups]);
+
+  const workApplicationMailtoUrl = useMemo(() => {
+    const bodyLines = buildWorkApplicationBodyLines({
+      date: formValues.date,
+      works: formGroups.map((group) => ({
+        start: group.workValues.workstarttime,
+        end: group.workValues.workendtime,
+      })),
+      cause: settingValue.workcause,
+      reason: settingValue.workreason,
+    });
+    return buildMailtoUrl(email, WORK_APPLICATION_SUBJECT, bodyLines);
+  }, [
+    email,
+    formGroups,
+    formValues.date,
+    settingValue.workcause,
+    settingValue.workreason,
+  ]);
 
   return (
     <div>
@@ -228,7 +253,16 @@ function LeaveForm({ isYesterday = false }: Props) {
         メール作成
       </Button>
 
+      <Button className="mb-3 ms-2" href={workApplicationMailtoUrl} variant="primary">
+        勤務申請を作成
+      </Button>
+
       <MailPreview text={extractMailBody(mailtoUrl)} />
+      <MailPreview
+        label="勤務申請メール本文プレビュー"
+        controlId="formWorkApplicationPreview"
+        text={extractMailBody(workApplicationMailtoUrl)}
+      />
     </div>
   );
 }

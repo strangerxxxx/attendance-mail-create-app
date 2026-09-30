@@ -4,6 +4,10 @@ export type SettingValuesType = {
   starttime: string;
   endtime: string;
   projectcode: string;
+  /** 勤務申請の事由 */
+  workcause: string;
+  /** 勤務申請の内容 */
+  workreason: string;
 };
 
 type BooleanKeys<T> = {

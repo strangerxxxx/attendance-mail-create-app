@@ -6,6 +6,7 @@ import { today, nextBusinessDay } from "../utils/dateUtils";
 import { buildMailtoUrl, extractMailBody, formatDateForMail } from "../utils/mailUtils";
 import { EmailField, IncludeField, MailPreview } from "./MailFormFields";
 import applications from "./Applications.json";
+import { WORK_APPLICATION_CLASS } from "../utils/workApplication";
 
 type FormValues = {
   date: string;
@@ -39,8 +40,24 @@ const fieldDefs: ValueItem<FormValues>[] = [
   { name: "内容", type: "text", field: "reason", disabledField: "isDisabledreason" },
 ];
 
+const causeAndReasonForClass = (
+  className: string,
+  workcause: string,
+  workreason: string,
+) => {
+  if (className === WORK_APPLICATION_CLASS) {
+    return { cause: workcause, reason: workreason };
+  }
+  const selected = applications.find((app) => app.name === className);
+  return {
+    cause: selected?.cause ?? "",
+    reason: selected?.reason ?? "",
+  };
+};
+
 function Application() {
   const [settingValue] = useSettings();
+  const initialClass = applications[0].name;
 
   const [email, setEmail] = useState(settingValue.email);
   const [formValues, setFormValues] = useState<FormValues>({
@@ -49,9 +66,12 @@ function Application() {
     time: settingValue.starttime,
     endtime: settingValue.endtime,
     breaktime: "00:00",
-    class: applications[0].name,
-    cause: applications[0].cause,
-    reason: applications[0].reason,
+    class: initialClass,
+    ...causeAndReasonForClass(
+      initialClass,
+      settingValue.workcause,
+      settingValue.workreason,
+    ),
     isDisableddate: false,
     isDisabledenddate: true,
     isDisabledtime: true,
@@ -68,6 +88,13 @@ function Application() {
       ...prev,
       time: settingValue.starttime,
       endtime: settingValue.endtime,
+      ...(prev.class === WORK_APPLICATION_CLASS
+        ? causeAndReasonForClass(
+            prev.class,
+            settingValue.workcause,
+            settingValue.workreason,
+          )
+        : {}),
     }));
   }, [settingValue]);
 
@@ -85,12 +112,14 @@ function Application() {
 
   const handleSelectChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const selectedName = e.target.value;
-    const selected = applications.find((app) => app.name === selectedName);
     setFormValues((prev) => ({
       ...prev,
       class: selectedName,
-      cause: selected?.cause ?? "",
-      reason: selected?.reason ?? "",
+      ...causeAndReasonForClass(
+        selectedName,
+        settingValue.workcause,
+        settingValue.workreason,
+      ),
     }));
   };
 
