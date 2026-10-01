@@ -9,6 +9,10 @@ export const WORK_APPLICATION_SUBJECT = "【勤怠管理】随時申請";
 /** 作業区分の間隔から法定分として除く時間（分） */
 const STATUTORY_BREAK_MINUTES = 30;
 
+/** 計算に含めない昼休憩（12:00-13:00） */
+const LUNCH_BREAK_START = 12 * 60;
+const LUNCH_BREAK_END = 13 * 60;
+
 export type WorkSpan = {
   start: string;
   end: string;
@@ -53,11 +57,18 @@ const toSpans = (works: WorkSpan[]): MinutesSpan[] =>
     return [{ start, end }];
   });
 
+/** 間隔のうち 12:00-13:00 と重なる分数。この時間帯は休憩計算に含めない */
+const lunchOverlapMinutes = (start: number, end: number): number => {
+  const overlapStart = Math.max(start, LUNCH_BREAK_START);
+  const overlapEnd = Math.min(end, LUNCH_BREAK_END);
+  return Math.max(0, overlapEnd - overlapStart);
+};
+
 /**
  * 作業区分を時刻順にまとめ、出勤時刻・退勤時刻と法定分を除く休憩時間を求める。
  * 出勤時刻は最も早い開始時刻、退勤時刻は最も遅い終了時刻。
- * 重ならない作業区分の間隔ごとに、30分を超えた分を合算する。
- * どの間隔も30分以内なら休憩時間は不要。
+ * 重ならない作業区分の間隔から 12:00-13:00 を除き、残った時間が 30 分を超えた分を合算する。
+ * どの間隔も、昼休憩を除いたあと 30 分以内なら休憩時間は不要。
  */
 export const buildWorkApplicationSchedule = (
   works: WorkSpan[],
@@ -79,9 +90,11 @@ export const buildWorkApplicationSchedule = (
 
   let extraBreakMinutes = 0;
   for (let index = 1; index < merged.length; index += 1) {
-    const gap = merged[index].start - merged[index - 1].end;
-    if (gap > STATUTORY_BREAK_MINUTES) {
-      extraBreakMinutes += gap - STATUTORY_BREAK_MINUTES;
+    const gapStart = merged[index - 1].end;
+    const gapEnd = merged[index].start;
+    const countable = gapEnd - gapStart - lunchOverlapMinutes(gapStart, gapEnd);
+    if (countable > STATUTORY_BREAK_MINUTES) {
+      extraBreakMinutes += countable - STATUTORY_BREAK_MINUTES;
     }
   }
 
