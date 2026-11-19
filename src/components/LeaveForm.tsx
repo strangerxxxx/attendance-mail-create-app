@@ -13,7 +13,7 @@ import {
   extractMailBody,
   formatDateForMail,
 } from "../utils/mailUtils";
-import { EmailField, IncludeField, MailPreview } from "./MailFormFields";
+import { DateTimeField, EmailField, IncludeField, MailPreview } from "./MailFormFields";
 import {
   buildWorkApplicationBodyLines,
   WORK_APPLICATION_SUBJECT,
@@ -204,12 +204,16 @@ function LeaveForm({ isYesterday = false }: Props) {
             included={!formValues[v.disabledField]}
             onToggle={handleCheckboxChange}
           >
-            <Form.Control
+            <DateTimeField
               type={v.type}
               name={String(v.field)}
               disabled={formValues[v.disabledField]}
               value={String(formValues[v.field])}
               onChange={handleChange}
+              current={v.type === "date" ? "date" : v.type === "time" ? "time" : undefined}
+              onApplyCurrent={(value) =>
+                setFormValues((prev) => ({ ...prev, [v.field]: value }))
+              }
             />
           </IncludeField>
         ))}
@@ -223,11 +227,24 @@ function LeaveForm({ isYesterday = false }: Props) {
                 key={`${group.id}-${v.field}`}
               >
                 <Form.Label className="col-sm-2">{v.name}</Form.Label>
-                <Form.Control
+                <DateTimeField
                   type={v.type}
                   name={v.field}
                   value={group.workValues[v.field]}
                   onChange={(e) => workHandleChange(group.id, e)}
+                  current={v.type === "time" ? "time" : undefined}
+                  onApplyCurrent={(value) =>
+                    setFormGroups((prev) =>
+                      prev.map((item) =>
+                        item.id === group.id
+                          ? {
+                              ...item,
+                              workValues: { ...item.workValues, [v.field]: value },
+                            }
+                          : item,
+                      ),
+                    )
+                  }
                 />
               </Form.Group>
             ))}

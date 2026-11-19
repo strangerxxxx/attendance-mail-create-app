@@ -4,7 +4,7 @@ import useSettings from "./useSettings";
 import { ValueItem } from "../types";
 import { today } from "../utils/dateUtils";
 import { buildMailtoUrl, extractMailBody, formatDateForMail } from "../utils/mailUtils";
-import { EmailField, IncludeField, MailPreview } from "./MailFormFields";
+import { DateTimeField, EmailField, IncludeField, MailPreview } from "./MailFormFields";
 
 type FormValues = {
   date: string;
@@ -67,12 +67,16 @@ function Attendance() {
             included={!formValues[v.disabledField]}
             onToggle={handleCheckboxChange}
           >
-            <Form.Control
+            <DateTimeField
               type={v.type}
               name={String(v.field)}
               disabled={formValues[v.disabledField]}
               value={String(formValues[v.field])}
               onChange={handleChange}
+              current={v.type === "date" ? "date" : "time"}
+              onApplyCurrent={(value) =>
+                setFormValues((prev) => ({ ...prev, [v.field]: value }))
+              }
             />
           </IncludeField>
         ))}

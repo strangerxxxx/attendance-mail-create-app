@@ -15,6 +15,13 @@ export const convertDate = (date: Date): string =>
 /** 今日の日付 (YYYY-MM-DD) */
 export const today = (): string => convertDate(new Date());
 
+/** 現在時刻 (HH:MM)。日付と同じく実行環境のローカル時刻 */
+export const currentTime = (date: Date = new Date()): string => {
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
+};
+
 /** 翌営業日の日付 (YYYY-MM-DD) */
 export const nextBusinessDay = (): string =>
   convertDate(addBusinessDays(new Date(), 1));

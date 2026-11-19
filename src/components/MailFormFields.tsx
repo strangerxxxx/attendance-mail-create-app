@@ -1,5 +1,6 @@
 import type { ChangeEvent, ReactNode } from "react";
-import { Form } from "react-bootstrap";
+import { Button, Form } from "react-bootstrap";
+import { currentTime, today } from "../utils/dateUtils";
 
 type EmailFieldProps = {
   value: string;
@@ -50,6 +51,52 @@ export function IncludeField({
       <Form.Label className="col-sm-2">{label}</Form.Label>
       {children}
     </Form.Group>
+  );
+}
+
+type DateTimeFieldProps = {
+  type: string;
+  name: string;
+  value: string;
+  disabled?: boolean;
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  /** 指定したとき、現在日付または現在時刻を入力するボタンを出す */
+  current?: "date" | "time";
+  onApplyCurrent?: (value: string) => void;
+};
+
+export function DateTimeField({
+  type,
+  name,
+  value,
+  disabled,
+  onChange,
+  current,
+  onApplyCurrent,
+}: DateTimeFieldProps) {
+  const label = current === "date" ? "現在日付" : "現在時刻";
+  return (
+    <div className="d-flex flex-grow-1 align-items-center">
+      <Form.Control
+        type={type}
+        name={name}
+        disabled={disabled}
+        value={value}
+        onChange={onChange}
+      />
+      {current && onApplyCurrent && (
+        <Button
+          type="button"
+          variant="outline-secondary"
+          className="ms-2 text-nowrap"
+          onClick={() =>
+            onApplyCurrent(current === "date" ? today() : currentTime())
+          }
+        >
+          {label}
+        </Button>
+      )}
+    </div>
   );
 }
 
