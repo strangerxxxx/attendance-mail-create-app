@@ -4,7 +4,7 @@ import useSettings from "./useSettings";
 import { ValueItem } from "../types";
 import { today, nextBusinessDay } from "../utils/dateUtils";
 import { buildMailtoUrl, extractMailBody, formatDateForMail } from "../utils/mailUtils";
-import { EmailField, IncludeField, MailPreview } from "./MailFormFields";
+import { DateTimeField, EmailField, IncludeField, MailPreview } from "./MailFormFields";
 import applications from "./Applications.json";
 import { WORK_APPLICATION_CLASS } from "../utils/workApplication";
 
@@ -160,12 +160,22 @@ function Application() {
                 ))}
               </Form.Select>
             ) : (
-              <Form.Control
+              <DateTimeField
                 type={v.type}
                 name={String(v.field)}
                 disabled={formValues[v.disabledField]}
                 value={String(formValues[v.field])}
                 onChange={handleChange}
+                current={
+                  v.type === "date"
+                    ? "date"
+                    : v.type === "time" && v.field !== "breaktime"
+                      ? "time"
+                      : undefined
+                }
+                onApplyCurrent={(value) =>
+                  setFormValues((prev) => ({ ...prev, [v.field]: value }))
+                }
               />
             )}
           </IncludeField>

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Form, Button, Container, Toast, ToastContainer, CloseButton } from "react-bootstrap";
 import useSettings from "./useSettings";
 import { SettingValuesType } from "../types";
+import { DateTimeField } from "./MailFormFields";
 
 type SettingFieldDef = {
   name: string;
@@ -76,12 +77,25 @@ function Settings() {
               key={v.field}
             >
               <Form.Label className="col-sm-2">{v.name}</Form.Label>
-              <Form.Control
-                type={v.type}
-                name={v.field}
-                value={settingValue[v.field]}
-                onChange={handleChange(v.field)}
-              />
+              {v.type === "time" ? (
+                <DateTimeField
+                  type={v.type}
+                  name={v.field}
+                  value={settingValue[v.field]}
+                  onChange={handleChange(v.field)}
+                  current="time"
+                  onApplyCurrent={(value) =>
+                    setSettingValues({ ...settingValue, [v.field]: value })
+                  }
+                />
+              ) : (
+                <Form.Control
+                  type={v.type}
+                  name={v.field}
+                  value={settingValue[v.field]}
+                  onChange={handleChange(v.field)}
+                />
+              )}
             </Form.Group>
           ))}
           <h2 className="h5 mt-4">勤務申請</h2>
